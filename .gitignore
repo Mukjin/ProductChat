@@ -1,0 +1,16 @@
+.env
+web/.env
+web/uploads/
+web/rewrite_cache.json
+web/query_log.jsonl
+web/__pycache__/
+**/__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# 연구·참고 폴더 (제품 런타임에 불필요)
+MailBox/
+notebooklm/
+그래프/
+방향1-NotebookLM/

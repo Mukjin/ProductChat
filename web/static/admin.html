@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>구매 안내 관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg: #212121; --side: #181818; --line: #3e3e3e; --text: #ececec;
+      --dim: #8f8f8f; --panel: #2a2a2a; --blue: #3c82f6; --warn: #e6c07b;
+      --ok: #7dcea0; --danger: #f0a8a8;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif;
+      background: var(--bg); color: var(--text); overflow: hidden;
+    }
+    .app { display: flex; height: 100%; }
+    .list {
+      width: 360px; background: var(--side); display: flex; flex-direction: column;
+      border-right: 1px solid #2a2a2a; flex-shrink: 0;
+    }
+    .head { padding: 16px 16px 10px; }
+    .head h1 { margin: 0; font-size: 16px; }
+    .head a { color: var(--dim); font-size: 12px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 12px 10px; }
+    .stat { background: #222; border-radius: 8px; padding: 8px 6px; text-align: center; }
+    .stat b { display: block; font-size: 16px; }
+    .stat span { font-size: 11px; color: var(--dim); }
+    .tools { display: flex; gap: 6px; padding: 0 12px 10px; }
+    .tools input, .tools select {
+      background: #2a2a2a; border: 1px solid var(--line); color: var(--text);
+      border-radius: 8px; padding: 8px; font: inherit; font-size: 13px;
+    }
+    .tools input { flex: 1; }
+    .rows { flex: 1; overflow: auto; padding: 0 8px 12px; }
+    .row {
+      width: 100%; text-align: left; border: 0; background: transparent;
+      color: var(--text); border-radius: 10px; padding: 10px; cursor: pointer; font: inherit;
+    }
+    .row:hover, .row.on { background: #2a2a2a; }
+    .row .qid { font-size: 11px; color: var(--dim); font-family: ui-monospace, Consolas, monospace; }
+    .row .q { display: block; margin-top: 3px; font-size: 13px; }
+    .dots { display: flex; gap: 4px; margin-top: 6px; }
+    .dot { font-size: 10px; padding: 1px 6px; border-radius: 999px; background: #333; color: var(--dim); }
+    .dot.ok { color: var(--ok); background: #24332a; }
+    .dot.no { color: var(--warn); background: #332c1f; }
+    .editor { flex: 1; overflow: auto; padding: 24px 32px 48px; }
+    .empty { color: var(--dim); margin-top: 80px; text-align: center; }
+    h2 { margin: 0 0 4px; font-size: 20px; }
+    .meta { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
+    label { display: block; font-size: 12px; color: var(--dim); margin: 16px 0 6px; }
+    textarea, input[type=text] {
+      width: 100%; background: var(--panel); border: 1px solid var(--line);
+      color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit;
+    }
+    textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+    .qbox { background: #262626; border-radius: 10px; padding: 12px 14px; line-height: 1.5; }
+    .forms { display: grid; gap: 8px; }
+    .form-row { display: flex; gap: 8px; align-items: center; background: var(--panel); padding: 8px 10px; border-radius: 10px; }
+    .form-row span { flex: 1; }
+    .form-row a { color: #9ec1ff; font-size: 13px; }
+    button, .file {
+      border: 0; border-radius: 8px; padding: 8px 12px; font: inherit; cursor: pointer;
+      background: #3a3a3a; color: var(--text);
+    }
+    .save { background: var(--blue); color: #fff; font-weight: 700; padding: 10px 18px; }
+    .danger { background: #4a2a2a; color: var(--danger); }
+    .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .shot { background: var(--panel); border-radius: 10px; padding: 8px; }
+    .shot img { width: 100%; border-radius: 8px; display: block; }
+    .note { font-size: 12px; color: var(--dim); margin-top: 16px; line-height: 1.5; }
+    .toast { margin-top: 12px; color: var(--ok); font-size: 13px; }
+    .toast.bad { color: var(--warn); }
+    .topbar {
+      height: 52px; display: flex; align-items: center; gap: 12px;
+      padding: 0 16px; background: var(--side); border-bottom: 1px solid #2a2a2a;
+    }
+    .topbar h1 { margin: 0; font-size: 16px; margin-right: 8px; }
+    .tab { background: transparent; color: var(--dim); }
+    .tab.on { background: #2a2a2a; color: var(--text); }
+    .topbar a { color: var(--dim); font-size: 13px; margin-left: auto; }
+    .logs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .log-tools {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 12px 16px; border-bottom: 1px solid #2a2a2a; background: var(--side);
+    }
+    .log-tools input {
+      flex: 1; min-width: 180px; background: #2a2a2a; border: 1px solid var(--line);
+      color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px;
+    }
+    .log-filters { display: flex; gap: 4px; }
+    .chip {
+      border: 0; background: #2a2a2a; color: var(--dim); border-radius: 999px;
+      padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer;
+    }
+    .chip.on { background: #3a3a3a; color: var(--text); }
+    .log-count { font-size: 12px; color: var(--dim); white-space: nowrap; }
+    .log-split { flex: 1; min-height: 0; display: flex; }
+    .log-list {
+      width: 380px; flex-shrink: 0; overflow: auto; border-right: 1px solid #2a2a2a;
+      background: var(--side); padding: 8px 8px 24px;
+    }
+    .day {
+      font-size: 11px; color: var(--dim); padding: 12px 10px 6px; font-weight: 650;
+    }
+    .lrow {
+      width: 100%; text-align: left; border: 0; background: transparent;
+      color: var(--text); border-radius: 10px; padding: 10px; cursor: pointer; font: inherit;
+    }
+    .lrow:hover { background: #242424; }
+    .lrow.on { background: #2a2a2a; }
+    .lrow .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+    .lrow .who { color: var(--text); font-weight: 650; }
+    .lrow .ask {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; font-size: 13px; line-height: 1.45;
+    }
+    .lrow .sub { margin-top: 5px; font-size: 11px; color: var(--dim); }
+    .tag { padding: 2px 8px; border-radius: 999px; background: #333; font-size: 11px; }
+    .tag.ok { color: var(--ok); }
+    .tag.no { color: var(--warn); }
+    .tag.mid { color: #9ec1ff; }
+    .log-detail { flex: 1; overflow: auto; padding: 24px 32px 48px; }
+    .detail-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .detail-h time { color: var(--dim); font-size: 13px; }
+    .detail-h .who { font-size: 18px; font-weight: 700; }
+    .ask-box, .ans-box {
+      background: var(--panel); border-radius: 12px; padding: 14px 16px; line-height: 1.6;
+    }
+    .ask-box { font-size: 16px; margin-bottom: 16px; }
+    .kv { display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; margin: 0 0 16px; font-size: 14px; }
+    .kv dt { color: var(--dim); }
+    .kv dd { margin: 0; }
+    .files { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+    .files a { color: #9ec1ff; text-decoration: none; background: #262626; border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+    .files a:hover { text-decoration: underline; }
+    .ans-box { white-space: pre-wrap; color: #d7d7d7; font-size: 14px; }
+    .open-edit { margin-top: 18px; background: var(--blue); color: #fff; font-weight: 700; }
+    body { display: flex; flex-direction: column; }
+    .app { flex: 1; min-height: 0; }
+    .app.hide, .logs.hide { display: none; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>구매 안내 관리</h1>
+    <button class="tab on" id="tabLogs" type="button">문의 기록</button>
+    <button class="tab" id="tabEdit" type="button">안내 편집</button>
+    <a href="/">직원 화면 열기</a>
+  </div>
+  <div class="logs" id="logsView">
+    <div class="log-tools">
+      <input id="logQ" placeholder="질문·이름·안내번호 검색" />
+      <div class="log-filters" id="logFilters">
+        <button class="chip on" type="button" data-kind="">전체</button>
+        <button class="chip" type="button" data-kind="안내">안내</button>
+        <button class="chip" type="button" data-kind="후보">후보</button>
+        <button class="chip" type="button" data-kind="거절">거절</button>
+      </div>
+      <span class="log-count" id="logCount"></span>
+    </div>
+    <div class="log-split">
+      <div class="log-list" id="logList"></div>
+      <div class="log-detail" id="logDetail">
+        <p class="empty">왼쪽에서 문의를 고르면 질문과 답을 자세히 봅니다.</p>
+      </div>
+    </div>
+  </div>
+  <div class="app hide" id="editView">
+    <aside class="list">
+      <div class="head">
+        <h1>안내 목록</h1>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="tools">
+        <input id="q" placeholder="질문·QID 검색" />
+        <select id="cat"><option value="">전체</option></select>
+      </div>
+      <div class="tools">
+        <select id="gap">
+          <option value="">상태 전체</option>
+          <option value="no-answer">답 없음</option>
+          <option value="no-form">양식 없음</option>
+          <option value="ready">답 있음</option>
+        </select>
+      </div>
+      <div class="rows" id="rows"></div>
+    </aside>
+    <main class="editor" id="editor">
+      <p class="empty">왼쪽에서 안내를 고르면 답·양식·캡처를 수정합니다.</p>
+    </main>
+  </div>
+  <script>
+    const rowsEl = document.getElementById("rows");
+    const editor = document.getElementById("editor");
+    const statsEl = document.getElementById("stats");
+    const qEl = document.getElementById("q");
+    const catEl = document.getElementById("cat");
+    const gapEl = document.getElementById("gap");
+    let catalog = { items: [], categories: [] };
+    let current = "";
+
+    async function loadCatalog() {
+      catalog = await (await fetch("/api/admin/catalog")).json();
+      statsEl.innerHTML = `
+        <div class="stat"><b>${catalog.indexed}</b><span>안내</span></div>
+        <div class="stat"><b>${catalog.answered}</b><span>답 등록</span></div>
+        <div class="stat"><b>${catalog.form_ready}</b><span>양식 있음</span></div>
+        <div class="stat"><b>${catalog.cap_ready}</b><span>캡처 있음</span></div>`;
+      const keep = catEl.value;
+      catEl.innerHTML = `<option value="">전체 분류</option>` + catalog.categories.map((c) =>
+        `<option ${c === keep ? "selected" : ""}>${esc(c)}</option>`).join("");
+      paintList();
+    }
+
+    function paintList() {
+      const q = qEl.value.trim().toLowerCase();
+      const cat = catEl.value;
+      const gap = gapEl.value;
+      const items = catalog.items.filter((it) => {
+        if (cat && it.category !== cat) return false;
+        if (gap === "no-answer" && it.has_answer) return false;
+        if (gap === "ready" && !it.has_answer) return false;
+        if (gap === "no-form" && it.forms_total > 0) return false;
+        if (q && !(it.qid.toLowerCase().includes(q) || it.question.toLowerCase().includes(q))) return false;
+        return true;
+      });
+      rowsEl.innerHTML = items.map((it) => `
+        <button class="row ${it.qid === current ? "on" : ""}" data-qid="${esc(it.qid)}">
+          <span class="qid">${esc(it.qid)} · ${esc(it.category)}</span>
+          <span class="q">${esc(it.question)}</span>
+          <span class="dots">
+            <span class="dot ${it.has_answer ? "ok" : "no"}">${it.has_answer ? "답" : "답 없음"}</span>
+            <span class="dot ${it.forms_ready ? "ok" : "no"}">양식 ${it.forms_ready}/${it.forms_total}</span>
+            <span class="dot ${it.captures ? "ok" : "no"}">캡처 ${it.captures}</span>
+          </span>
+        </button>`).join("");
+      rowsEl.querySelectorAll(".row").forEach((b) => b.onclick = () => openItem(b.dataset.qid));
+    }
+
+    async function openItem(qid) {
+      current = qid;
+      paintList();
+      const it = await (await fetch("/api/admin/item?qid=" + encodeURIComponent(qid))).json();
+      renderEditor(it);
+    }
+
+    function renderEditor(it) {
+      const forms = (it.forms || []).map((f) => `
+        <div class="form-row">
+          <span>${esc(f.name)}</span>
+          ${f.url ? `<a href="${esc(f.url)}" target="_blank">파일 보기</a>` : `<label class="file">양식 올리기<input type="file" hidden data-form="${esc(f.name)}" /></label>`}
+        </div>`).join("") || `<p class="note">엑셀 관련 양식 칸이 비어 있습니다. 아래에 이름을 추가하세요.</p>`;
+      const shots = (it.captures || []).filter((c) => c.url).map((c) => `
+        <div class="shot">
+          <img src="${esc(c.url)}" alt="${esc(c.title)}" />
+          <p>${esc(c.title)}</p>
+          <button class="danger" data-del="${esc(c.file)}">삭제</button>
+        </div>`).join("") || `<p class="note">캡처가 없습니다.</p>`;
+      editor.innerHTML = `
+        <div class="meta">${esc(it.category)} · ${esc(it.qid)}</div>
+        <h2>저장된 질문</h2>
+        <div class="qbox">${esc(it.question)}</div>
+        <label for="answer">직원에게 보여줄 답 (엑셀 챗봇 답변)</label>
+        <textarea id="answer">${esc(it.answer)}</textarea>
+        <label>관련 양식 이름 (쉼표로 구분)</label>
+        <input id="forms" type="text" value="${esc((it.forms || []).map((f) => f.name).join(", "))}" />
+        <div class="forms" style="margin-top:8px">${forms}</div>
+        <label>유사 질문</label>
+        <input id="similar" type="text" value="${esc((it.similar || []).join(", "))}" />
+        <label>캡처 설명 (쉼표, 단계 순서)</label>
+        <input id="notes" type="text" value="${esc((it.capture_notes || []).join(", "))}" />
+        <label>경영정보 캡처</label>
+        <div class="shots">${shots}</div>
+        <p style="margin-top:12px"><label class="file">캡처 이미지 추가<input id="capfile" type="file" accept="image/*" hidden /></label></p>
+        <p style="margin-top:18px"><button class="save" id="save">저장</button></p>
+        <div class="toast" id="toast"></div>
+        <p class="note">핵심 질문은 여기서 바꾸지 않습니다. 질문을 바꾸면 직원 화면 매칭용 색인을 다시 만들어야 합니다. 엑셀이 열려 있으면 엑셀은 잠기고, 이 화면 저장본만 남습니다.</p>`;
+      editor.querySelector("#save").onclick = () => save(it.qid);
+      editor.querySelectorAll("input[data-form]").forEach((inp) => {
+        inp.onchange = () => uploadForm(it.qid, inp.dataset.form, inp.files[0]);
+      });
+      editor.querySelector("#capfile").onchange = () => uploadCap(it.qid, editor.querySelector("#capfile").files[0]);
+      editor.querySelectorAll("[data-del]").forEach((b) => {
+        b.onclick = () => delCap(it.qid, b.dataset.del);
+      });
+    }
+
+    async function save(qid) {
+      const body = {
+        qid,
+        answer: document.getElementById("answer").value,
+        forms: split(document.getElementById("forms").value),
+        similar: split(document.getElementById("similar").value),
+        capture_notes: split(document.getElementById("notes").value),
+      };
+      const res = await (await fetch("/api/admin/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })).json();
+      if (res.error) {
+        const t = document.getElementById("toast");
+        t.className = "toast bad";
+        t.textContent = res.error;
+        return;
+      }
+      await loadCatalog();
+      renderEditor(res.item);
+      const t = document.getElementById("toast");
+      t.className = res.excel_message ? "toast bad" : "toast";
+      t.textContent = res.excel_message ? "저장됨. " + res.excel_message : "저장했습니다. 직원 화면에 바로 반영됩니다.";
+    }
+
+    async function uploadForm(qid, formName, file) {
+      if (!file) return;
+      await postFile("/api/admin/upload-form", { form_name: formName, filename: formName + extOf(file.name), data: await toB64(file) });
+      const it = await (await fetch("/api/admin/item?qid=" + encodeURIComponent(qid))).json();
+      await loadCatalog();
+      renderEditor(it);
+    }
+
+    async function uploadCap(qid, file) {
+      if (!file) return;
+      await postFile("/api/admin/upload-capture", { qid, filename: file.name, data: await toB64(file) });
+      const it = await (await fetch("/api/admin/item?qid=" + encodeURIComponent(qid))).json();
+      await loadCatalog();
+      renderEditor(it);
+    }
+
+    async function delCap(qid, filename) {
+      await fetch("/api/admin/delete-capture", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qid, filename }),
+      });
+      const it = await (await fetch("/api/admin/item?qid=" + encodeURIComponent(qid))).json();
+      await loadCatalog();
+      renderEditor(it);
+    }
+
+    async function postFile(url, payload) {
+      const res = await (await fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })).json();
+      if (res.error) alert(res.error);
+      return res;
+    }
+
+    function split(s) { return s.split(",").map((x) => x.trim()).filter(Boolean); }
+    function extOf(name) {
+      const i = name.lastIndexOf(".");
+      return i >= 0 ? name.slice(i) : ".pdf";
+    }
+    async function toB64(file) {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let s = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      }
+      return btoa(s);
+    }
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    qEl.oninput = paintList;
+    catEl.onchange = paintList;
+    gapEl.onchange = paintList;
+
+    document.getElementById("tabLogs").onclick = () => showTab("logs");
+    document.getElementById("tabEdit").onclick = () => showTab("edit");
+
+    function showTab(name) {
+      const logs = name === "logs";
+      document.getElementById("logsView").classList.toggle("hide", !logs);
+      document.getElementById("editView").classList.toggle("hide", logs);
+      document.getElementById("tabLogs").classList.toggle("on", logs);
+      document.getElementById("tabEdit").classList.toggle("on", !logs);
+      if (logs) loadLogs();
+      else loadCatalog();
+    }
+
+    const logList = document.getElementById("logList");
+    const logDetail = document.getElementById("logDetail");
+    const logQ = document.getElementById("logQ");
+    let logRows = [];
+    let logKind = "";
+    let logSel = "";
+
+    function kindOf(r) {
+      if (r.refused) return "거절";
+      if (r.ambiguous) return "후보";
+      return "안내";
+    }
+
+    function tagClass(kind) {
+      return kind === "거절" ? "no" : (kind === "후보" ? "mid" : "ok");
+    }
+
+    function logKey(r, i) {
+      return `${r.time}|${r.user}|${r.query}|${i}`;
+    }
+
+    function visibleLogs() {
+      const q = logQ.value.trim().toLowerCase();
+      return logRows.map((r, i) => ({ r, i, key: logKey(r, i) })).filter(({ r }) => {
+        if (logKind && kindOf(r) !== logKind) return false;
+        if (!q) return true;
+        const blob = [r.query, r.user, r.qid, r.matched, r.answer].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    function paintLogs() {
+      const rows = visibleLogs();
+      const n = rows.length;
+      const refused = logRows.filter((r) => r.refused).length;
+      document.getElementById("logCount").textContent =
+        n === logRows.length ? `${n}건 · 거절 ${refused}` : `${n}건 표시 · 전체 ${logRows.length}`;
+      if (!rows.length) {
+        logList.innerHTML = `<p class="empty" style="margin-top:40px">${logRows.length ? "조건에 맞는 문의가 없습니다." : "아직 문의가 없습니다."}</p>`;
+        if (!logRows.length) {
+          logDetail.innerHTML = `<p class="empty">직원 화면에서 질문하면 여기에 쌓입니다.</p>`;
+        }
+        return;
+      }
+      if (!rows.some((x) => x.key === logSel)) logSel = rows[0].key;
+      const groups = [];
+      for (const item of rows) {
+        const day = String(item.r.time || "").slice(0, 10) || "날짜 없음";
+        if (!groups.length || groups[groups.length - 1].day !== day) {
+          groups.push({ day, items: [item] });
+        } else {
+          groups[groups.length - 1].items.push(item);
+        }
+      }
+      logList.innerHTML = groups.map((g) => `
+        <div class="day">${esc(g.day)}</div>
+        ${g.items.map(({ r, key }) => {
+          const kind = kindOf(r);
+          const hhmm = String(r.time || "").slice(11, 16);
+          const extra = [r.qid, (r.files || []).length ? `첨부 ${(r.files || []).length}` : ""]
+            .filter(Boolean).join(" · ");
+          return `<button class="lrow ${key === logSel ? "on" : ""}" type="button" data-key="${esc(key)}">
+            <div class="meta">
+              <span>${esc(hhmm)}</span>
+              <span class="who">${esc(r.user || "이름 없음")}</span>
+              <span class="tag ${tagClass(kind)}">${kind}</span>
+            </div>
+            <div class="ask">${esc(r.query || "(질문 없음)")}</div>
+            ${extra ? `<div class="sub">${esc(extra)}</div>` : ""}
+          </button>`;
+        }).join("")}
+      `).join("");
+      logList.querySelectorAll(".lrow").forEach((b) => {
+        b.onclick = () => {
+          logSel = b.dataset.key;
+          paintLogs();
+        };
+      });
+      const picked = rows.find((x) => x.key === logSel);
+      if (picked) showLog(picked.r);
+    }
+
+    function showLog(r) {
+      const kind = kindOf(r);
+      const files = r.files || [];
+      const forms = r.forms || [];
+      const fileHtml = files.length
+        ? `<div class="files">${files.map((f) =>
+            `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>`
+          ).join("")}</div>`
+        : "";
+      const edit = r.qid && !r.refused
+        ? `<button class="open-edit" type="button" id="openEdit">이 안내 편집 · ${esc(r.qid)}</button>`
+        : "";
+      logDetail.innerHTML = `
+        <div class="detail-h">
+          <span class="who">${esc(r.user || "이름 없음")}</span>
+          <span class="tag ${tagClass(kind)}">${kind}</span>
+          <time>${esc(r.time || "")}</time>
+        </div>
+        <div class="ask-box">${esc(r.query || "(질문 없음)")}</div>
+        ${fileHtml}
+        <dl class="kv">
+          <dt>나온 안내</dt><dd>${esc(r.matched || "-")}${r.qid ? ` · ${esc(r.qid)}` : ""}</dd>
+          <dt>점수</dt><dd>${r.score == null ? "-" : r.score}</dd>
+          <dt>관련 양식</dt><dd>${forms.length ? esc(forms.join(", ")) : "없음"}</dd>
+          <dt>출처</dt><dd>${esc(r.source || "질문")}</dd>
+        </dl>
+        <label>직원에게 나간 답</label>
+        <div class="ans-box">${esc(r.answer || "(검증 답이 아직 없음)")}</div>
+        ${edit}`;
+      const btn = document.getElementById("openEdit");
+      if (btn) {
+        btn.onclick = () => {
+          showTab("edit");
+          openItem(r.qid);
+        };
+      }
+    }
+
+    async function loadLogs() {
+      const data = await (await fetch("/api/admin/logs")).json();
+      logRows = data.logs || [];
+      paintLogs();
+    }
+
+    logQ.oninput = paintLogs;
+    document.getElementById("logFilters").onclick = (e) => {
+      const b = e.target.closest("[data-kind]");
+      if (!b) return;
+      logKind = b.dataset.kind;
+      document.querySelectorAll("#logFilters .chip").forEach((c) => c.classList.toggle("on", c === b));
+      paintLogs();
+    };
+
+    loadLogs();
+  </script>
+</body>
+</html>
