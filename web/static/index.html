@@ -517,14 +517,25 @@
         paintAttachments();
         try {
           const dataUrl = await readAsDataUrl(file);
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ files: [{ name: file.name, data: dataUrl }] }),
-          });
-          const out = await res.json();
-          if (!res.ok) throw new Error(out.error || "올리지 못했습니다");
-          Object.assign(item, out.files[0], { uploading: false, preview: item.preview });
+          if (window.StaticFaq) {
+            // GitHub Pages 등 정적 호스팅: 서버 저장 없이 미리보기만 유지
+            Object.assign(item, {
+              name: file.name,
+              url: dataUrl,
+              image: item.image,
+              size: file.size,
+              uploading: false,
+            });
+          } else {
+            const res = await fetch("/api/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ files: [{ name: file.name, data: dataUrl }] }),
+            });
+            const out = await res.json();
+            if (!res.ok) throw new Error(out.error || "올리지 못했습니다");
+            Object.assign(item, out.files[0], { uploading: false, preview: item.preview });
+          }
         } catch (err) {
           alert(`${file.name}: ${err.message}`);
           attachments = attachments.filter((a) => a.key !== item.key);
@@ -853,13 +864,19 @@
       thread.appendChild(wait);
       stage.scrollTop = stage.scrollHeight;
       try {
-        const res = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, user: userName(), history: historyPayload(chat), files }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "요청 실패");
+        let data;
+        if (window.StaticFaq) {
+          await window.StaticFaq.load("./data/faq.json");
+          data = await window.StaticFaq.ask(query, historyPayload(chat));
+        } else {
+          const res = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query, user: userName(), history: historyPayload(chat), files }),
+          });
+          data = await res.json();
+          if (!res.ok) throw new Error(data.error || "요청 실패");
+        }
         const node = guideNode(data, { animate: true });
         wait.replaceWith(node);
         chat.messages.push({ role: "assistant", data });
@@ -878,12 +895,18 @@
       wait.innerHTML = `<div class="dots"><i></i><i></i><i></i></div>`;
       thread.appendChild(wait);
       try {
-        const res = await fetch("/api/guide", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ qid, user: userName(), query: "" }),
-        });
-        const data = await res.json();
+        let data;
+        if (window.StaticFaq) {
+          await window.StaticFaq.load("./data/faq.json");
+          data = await window.StaticFaq.guide(qid);
+        } else {
+          const res = await fetch("/api/guide", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qid, user: userName(), query: "" }),
+          });
+          data = await res.json();
+        }
         const node = guideNode(data, { animate: true });
         wait.replaceWith(node);
         if (chat) {
