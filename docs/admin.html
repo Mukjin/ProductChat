@@ -169,7 +169,7 @@
       <a class="on" href="./admin.html">관리자</a>
     </div>
   </div>
-  <div class="banner" id="staticBanner" hidden>GitHub Pages 보기 모드입니다. 안내·양식·캡처는 볼 수 있고, 저장·업로드·문의 기록은 로컬 서버에서만 됩니다.</div>
+  <div class="banner" id="staticBanner" hidden>GitHub Pages 보기 모드입니다. 문의 기록은 이 브라우저에 저장됩니다. 안내 수정·업로드는 로컬 서버에서만 됩니다.</div>
   <div class="logs" id="logsView">
     <div class="log-tools">
       <input id="logQ" placeholder="질문·이름·안내번호 검색" />
@@ -484,7 +484,7 @@
         logList.innerHTML = `<p class="empty" style="margin-top:40px">${logRows.length ? "조건에 맞는 문의가 없습니다." : "아직 문의가 없습니다."}</p>`;
         if (!logRows.length) {
           logDetail.innerHTML = `<p class="empty">${staticMode
-            ? "Pages에서는 문의 기록이 쌓이지 않습니다. 로컬 서버를 켜면 직원 질문이 여기에 남습니다."
+            ? "Guest 화면에서 질문하면 이 브라우저에 문의가 쌓입니다. (다른 PC·시크릿 창과는 공유되지 않습니다.)"
             : "직원 화면에서 질문하면 여기에 쌓입니다."}</p>`;
         }
         return;
@@ -567,7 +567,7 @@
 
     async function loadLogs() {
       if (await ensureStatic()) {
-        logRows = [];
+        logRows = window.StaticFaq.readLogs(200);
         paintLogs();
         return;
       }

@@ -238,5 +238,76 @@
     };
   }
 
-  global.StaticFaq = { load, ask, guide, adminCatalog, adminItem, CLARIFY_MESSAGE };
+  const LOG_KEY = "tta-guide-query-logs";
+  const LOG_KEEP = 500;
+
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function nowKst() {
+    const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return (
+      d.getUTCFullYear() +
+      "-" + pad(d.getUTCMonth() + 1) +
+      "-" + pad(d.getUTCDate()) +
+      " " + pad(d.getUTCHours()) +
+      ":" + pad(d.getUTCMinutes()) +
+      ":" + pad(d.getUTCSeconds())
+    );
+  }
+
+  function readLogs(limit) {
+    try {
+      const rows = JSON.parse(localStorage.getItem(LOG_KEY) || "[]");
+      if (!Array.isArray(rows)) return [];
+      return rows.slice(-(limit || 200)).reverse();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function appendLog(user, query, result, source, files) {
+    const answer = (result && (result.answer || result.message)) || "";
+    const entry = {
+      time: nowKst(),
+      user: String(user || "").trim().slice(0, 40) || "이름 없음",
+      query: String(query || "").trim().slice(0, 500),
+      source: source || "질문",
+      refused: !!(result && result.refused),
+      qid: (result && result.qid) || "",
+      matched: (result && result.question) || "",
+      score: result ? result.score : null,
+      ambiguous: !!(result && result.ambiguous),
+      answer: String(answer).slice(0, 2000),
+      forms: ((result && result.forms) || [])
+        .map((f) => f && f.name)
+        .filter(Boolean),
+      files: (files || [])
+        .filter((f) => f && f.url)
+        .map((f) => ({ name: f.name, url: f.url })),
+    };
+    let rows = [];
+    try {
+      rows = JSON.parse(localStorage.getItem(LOG_KEY) || "[]");
+      if (!Array.isArray(rows)) rows = [];
+    } catch (_) {
+      rows = [];
+    }
+    rows.push(entry);
+    if (rows.length > LOG_KEEP) rows = rows.slice(-LOG_KEEP);
+    localStorage.setItem(LOG_KEY, JSON.stringify(rows));
+    return entry;
+  }
+
+  global.StaticFaq = {
+    load,
+    ask,
+    guide,
+    adminCatalog,
+    adminItem,
+    appendLog,
+    readLogs,
+    CLARIFY_MESSAGE,
+  };
 })(typeof window !== "undefined" ? window : globalThis);

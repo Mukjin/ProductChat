@@ -894,6 +894,7 @@
         let data;
         if (await ensureStatic()) {
           data = await window.StaticFaq.ask(query, historyPayload(chat));
+          window.StaticFaq.appendLog(userName(), query, data, "질문", files);
         } else {
           const res = await fetch("/api/ask", {
             method: "POST",
@@ -924,6 +925,13 @@
         let data;
         if (await ensureStatic()) {
           data = await window.StaticFaq.guide(qid);
+          window.StaticFaq.appendLog(
+            userName(),
+            (data && data.question) || qid,
+            data,
+            "안내선택",
+            []
+          );
         } else {
           const res = await fetch("/api/guide", {
             method: "POST",
