@@ -1136,6 +1136,9 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/admin", "/admin.html"):
             self._file(STATIC / "admin.html")
             return
+        if path == "/engine.js":
+            self._file(STATIC / "engine.js")
+            return
         if path == "/api/health":
             self._json(200, {"ok": True, "indexed": len(INDEX), "model": MODEL})
             return

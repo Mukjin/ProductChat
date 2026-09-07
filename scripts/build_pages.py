@@ -63,6 +63,7 @@ def main() -> None:
                 "answer": extra.get("answer") or "",
                 "forms": forms,
                 "captures": caps,
+                "capture_notes": extra.get("capture_notes") or [],
                 "similar": extra.get("similar") or [],
                 "rule": extra.get("rule") or "",
                 "law": extra.get("law") or "",
@@ -95,23 +96,21 @@ def main() -> None:
 
     static = ROOT / "web" / "static"
     shutil.copy2(static / "index.html", docs / "index.html")
+    shutil.copy2(static / "admin.html", docs / "admin.html")
     shutil.copy2(static / "engine.js", docs / "engine.js")
     (docs / ".nojekyll").write_text("", encoding="utf-8")
 
-    # Pages에서는 관리자 서버가 없으므로 링크를 안내 문구로 바꾼다.
-    html = (docs / "index.html").read_text(encoding="utf-8")
-    html = html.replace(
-        '<a href="/admin" style="color:#9ec1ff">관리자</a>',
-        '<span style="color:#8f8f8f">관리자(로컬 서버)</span>',
-    )
-    # 정적 엔진 로드 (본문 스크립트보다 먼저)
-    if "engine.js" not in html:
-        html = html.replace(
-            "  <script>",
-            '  <script src="./engine.js"></script>\n  <script>',
-            1,
-        )
-    (docs / "index.html").write_text(html, encoding="utf-8")
+    # index에 engine이 없으면 넣고, 관리자 링크 문구는 소스에 이미 반영됨
+    for name in ("index.html", "admin.html"):
+        path = docs / name
+        html = path.read_text(encoding="utf-8")
+        if 'src="./engine.js"' not in html and "engine.js" not in html:
+            html = html.replace(
+                "  <script>",
+                '  <script src="./engine.js"></script>\n  <script>',
+                1,
+            )
+            path.write_text(html, encoding="utf-8")
 
     size = sum(p.stat().st_size for p in docs.rglob("*") if p.is_file())
     print(f"docs/ 생성 완료: FAQ {len(rows)}건, {size / 1e6:.1f} MB", flush=True)

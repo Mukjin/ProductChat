@@ -183,5 +183,60 @@
     return packRow(row, null, null);
   }
 
-  global.StaticFaq = { load, ask, guide, CLARIFY_MESSAGE };
+  function adminCatalog() {
+    const cats = [];
+    const seen = new Set();
+    let answered = 0;
+    let formReady = 0;
+    let capReady = 0;
+    const items = ROWS.map((row) => {
+      const forms = row.forms || [];
+      const caps = (row.captures || []).filter((c) => c.url);
+      const hasAnswer = !!(row.answer || "").trim();
+      if (hasAnswer) answered += 1;
+      if (forms.some((f) => f.url)) formReady += 1;
+      if (caps.length) capReady += 1;
+      const cat = row.cat || "";
+      if (cat && !seen.has(cat)) {
+        seen.add(cat);
+        cats.push(cat);
+      }
+      return {
+        qid: row.qid,
+        category: cat,
+        question: row.q,
+        has_answer: hasAnswer,
+        forms_ready: forms.filter((f) => f.url).length,
+        forms_total: forms.length,
+        captures: caps.length,
+      };
+    });
+    return {
+      indexed: ROWS.length,
+      answered,
+      form_ready: formReady,
+      cap_ready: capReady,
+      categories: cats,
+      items,
+    };
+  }
+
+  function adminItem(qid) {
+    const row = BY_QID[qid];
+    if (!row) return null;
+    return {
+      qid,
+      category: row.cat || "",
+      question: row.q,
+      answer: row.answer || "",
+      forms: row.forms || [],
+      similar: row.similar || [],
+      capture_notes: row.capture_notes || (row.captures || []).map((c) => c.title).filter(Boolean),
+      captures: row.captures || [],
+      rule: row.rule || "",
+      law: row.law || "",
+    };
+  }
+
+  global.StaticFaq = { load, ask, guide, adminCatalog, adminItem, CLARIFY_MESSAGE };
 })(typeof window !== "undefined" ? window : globalThis);
