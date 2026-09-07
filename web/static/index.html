@@ -175,47 +175,122 @@
     }
     .stage.empty {
       justify-content: flex-start;
-      padding: 4vh 0 24px;
+      padding: 6vh 0 28px;
+    }
+    .greet-wrap {
+      text-align: center;
+      margin: 0 0 22px;
     }
     .greet {
-      text-align: center; font-size: clamp(22px, 3.2vw, 32px); font-weight: 600;
-      letter-spacing: -0.04em; margin: 0 0 28px; line-height: 1.4;
+      text-align: center; font-size: clamp(22px, 3vw, 30px); font-weight: 600;
+      letter-spacing: -0.04em; margin: 0; line-height: 1.4;
+    }
+    .greet-sub {
+      margin: 10px 0 0;
+      color: var(--dim);
+      font-size: 14px;
+      line-height: 1.5;
     }
     .example-board {
-      width: min(920px, calc(100% - 32px));
+      width: min(640px, calc(100% - 32px));
       margin: 0 auto 8px;
-      display: grid;
-      gap: 18px;
     }
-    .example-cat {
-      background: #262626;
+    .cat-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 5px;
+      background: #1a1a1a;
       border: 1px solid #333;
-      border-radius: 16px;
-      padding: 14px 14px 12px;
+      border-radius: 14px;
+      margin-bottom: 14px;
     }
-    .example-cat h2 {
-      margin: 0 0 10px;
+    .cat-tab {
+      border: 0;
+      background: transparent;
+      color: var(--dim);
+      font: inherit;
       font-size: 13px;
+      font-weight: 650;
+      padding: 10px 6px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    .cat-tab:hover { color: var(--text); background: #262626; }
+    .cat-tab.on {
+      background: #2f2f2f;
+      color: #fff;
+      box-shadow: inset 0 0 0 1px #444;
+    }
+    .cat-tab .n {
+      display: inline-block;
+      width: 18px; height: 18px; margin-right: 4px;
+      border-radius: 50%;
+      background: #3a3a3a;
+      color: #bdbdbd;
+      font-size: 11px;
       font-weight: 700;
-      color: #cfcfcf;
-      letter-spacing: -0.02em;
+      line-height: 18px;
+      text-align: center;
+      vertical-align: 1px;
     }
-    .example-cat .chips {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin: 0;
-      justify-content: stretch;
+    .cat-tab.on .n { background: var(--blue); color: #fff; }
+    .q-panel {
+      border: 1px solid #333;
+      background: #242424;
+      border-radius: 16px;
+      overflow: hidden;
+      animation: panelIn .18s ease;
     }
-    .example-cat .chip {
-      border: 1px solid var(--line); background: #2c2c2c; color: #d7d7d7;
-      border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 13px;
-      cursor: pointer; text-align: left; line-height: 1.45;
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+    .q-panel-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 10px; padding: 14px 16px 10px;
+      border-bottom: 1px solid #303030;
+    }
+    .q-panel-head h2 {
+      margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+    }
+    .q-panel-head span { color: var(--dim); font-size: 12px; }
+    .q-list { display: grid; }
+    .q-item {
       width: 100%;
+      display: grid;
+      grid-template-columns: 28px 1fr 16px;
+      align-items: start;
+      gap: 10px;
+      border: 0;
+      border-top: 1px solid #2e2e2e;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: left;
+      padding: 13px 16px;
+      cursor: pointer;
+      transition: background .12s ease;
     }
-    .example-cat .chip:hover { background: #343434; color: #fff; }
+    .q-item:first-child { border-top: 0; }
+    .q-item:hover { background: #2c2c2c; }
+    .q-item:active { background: #323232; }
+    .q-item .i {
+      width: 22px; height: 22px; border-radius: 7px;
+      background: #333; color: #bdbdbd;
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 700; margin-top: 1px;
+    }
+    .q-item:hover .i { background: var(--blue); color: #fff; }
+    .q-item .arrow { color: #666; font-size: 14px; margin-top: 2px; }
+    .q-item:hover .arrow { color: #9ec1ff; }
     @media (max-width: 720px) {
-      .example-cat .chips { grid-template-columns: 1fr; }
+      .cat-tabs { grid-template-columns: repeat(2, 1fr); }
+      .cat-tab { font-size: 12px; padding: 9px 4px; }
+      .q-item { font-size: 13px; padding: 12px 14px; }
     }
     .thread { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 16px; }
     .msg { display: flex; gap: 14px; margin: 0 0 28px; }
@@ -455,7 +530,10 @@
 
       <div class="stage empty" id="stage">
         <div class="thread" id="thread">
-          <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+          <div class="greet-wrap">
+            <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+            <p class="greet-sub">아래 분류를 고른 뒤, 예시 질문을 눌러 보세요.</p>
+          </div>
           <div class="example-board" id="exampleBoard"></div>
         </div>
       </div>
@@ -503,8 +581,9 @@
 
     const exampleCategories = [
       {
-        name: "1. 구매/발주",
+        name: "구매/발주",
         id: "구매/발주",
+        hint: "견적·발주·구매요구",
         questions: [
           "참조견적은 어떻게 요청하나요?",
           "구매상세요청서에는 어떤 내용을 기재해야 하나요?",
@@ -515,8 +594,9 @@
         ],
       },
       {
-        name: "2. 계약",
+        name: "계약",
         id: "계약",
+        hint: "착수·보증·인지세",
         questions: [
           "착수계는 어떻게 작성하나요?",
           "계약 체결 시 계약상대자가 제출해야 할 서류 목록은 무엇인가요?",
@@ -527,8 +607,9 @@
         ],
       },
       {
-        name: "3. 검수",
+        name: "검수",
         id: "검수",
+        hint: "검수조서·결과등록",
         questions: [
           "검수조서는 어떻게 작성하고 누가 제출하나요?",
           "경영정보시스템에서 검수결과를 등록하는 절차는 어떻게 되나요?",
@@ -539,8 +620,9 @@
         ],
       },
       {
-        name: "4. 대금지급",
+        name: "대금지급",
         id: "대금지급",
+        hint: "잔금·서류·정산",
         questions: [
           "잔금 지급 시 필요한 서류는 무엇인가요?",
           "대금 지급(잔금)이 늦어질 경우 계약상대자에게 이자를 지급해야 하나요?",
@@ -551,6 +633,7 @@
         ],
       },
     ];
+    let activeExampleCat = exampleCategories[0].id;
 
     let staticMode = false;
     async function ensureStatic() {
@@ -797,23 +880,47 @@
     function paintExamples() {
       const board = document.getElementById("exampleBoard");
       if (!board) return;
-      board.innerHTML = exampleCategories.map((cat) => `
-        <section class="example-cat" id="cat-${esc(cat.id)}" data-cat="${esc(cat.id)}">
-          <h2>${esc(cat.name)}</h2>
-          <div class="chips">
-            ${cat.questions.map((q) =>
-              `<button type="button" class="chip" data-q="${esc(q)}">${esc(q)}</button>`
-            ).join("")}
+      const cat = exampleCategories.find((c) => c.id === activeExampleCat) || exampleCategories[0];
+      board.innerHTML = `
+        <div class="cat-tabs" role="tablist" aria-label="예시 질문 분류">
+          ${exampleCategories.map((c, i) => `
+            <button type="button" class="cat-tab ${c.id === cat.id ? "on" : ""}" role="tab"
+              aria-selected="${c.id === cat.id ? "true" : "false"}" data-cat="${esc(c.id)}">
+              <span class="n">${i + 1}</span>${esc(c.name)}
+            </button>`).join("")}
+        </div>
+        <section class="q-panel" aria-label="${esc(cat.name)} 예시 질문">
+          <div class="q-panel-head">
+            <h2>${esc(cat.name)}</h2>
+            <span>${esc(cat.hint)} · 예시 ${cat.questions.length}개</span>
           </div>
-        </section>`).join("");
-      board.querySelectorAll(".chip").forEach((b) => {
+          <div class="q-list">
+            ${cat.questions.map((q, i) => `
+              <button type="button" class="q-item" data-q="${esc(q)}">
+                <span class="i">${i + 1}</span>
+                <span>${esc(q)}</span>
+                <span class="arrow" aria-hidden="true">›</span>
+              </button>`).join("")}
+          </div>
+        </section>`;
+      board.querySelectorAll(".cat-tab").forEach((b) => {
+        b.onclick = () => {
+          activeExampleCat = b.dataset.cat;
+          paintExamples();
+        };
+      });
+      board.querySelectorAll(".q-item").forEach((b) => {
         b.onclick = () => ask(b.dataset.q);
       });
     }
 
-    function showEmptyHome() {
+    function showEmptyHome(focusCat) {
+      if (focusCat) activeExampleCat = focusCat;
       thread.innerHTML = `
-        <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+        <div class="greet-wrap">
+          <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+          <p class="greet-sub">아래 분류를 고른 뒤, 예시 질문을 눌러 보세요.</p>
+        </div>
         <div class="example-board" id="exampleBoard"></div>`;
       stage.classList.add("empty");
       paintExamples();
@@ -850,12 +957,14 @@
       b.onclick = () => {
         const cat = b.dataset.cat;
         if (!currentChat() || !(currentChat().messages || []).length) {
-          showEmptyHome();
+          showEmptyHome(cat);
+          return;
         }
-        const target = document.getElementById(`cat-${cat}`);
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+        showEmptyHome(cat);
+        currentId = null;
+        paintHist();
+        input.value = "";
+        syncSend();
       };
     });
     document.getElementById("newChat").onclick = () => reset();
@@ -977,10 +1086,12 @@
       chat.messages.push({ role: "user", text: query, files });
       persistChats();
       stage.classList.remove("empty");
-      const g = document.getElementById("greet");
-      if (g) g.remove();
-      const board = document.getElementById("exampleBoard");
-      if (board) board.remove();
+      const home = thread.querySelector(".greet-wrap, #exampleBoard");
+      if (home) {
+        thread.querySelector(".greet-wrap")?.remove();
+        document.getElementById("exampleBoard")?.remove();
+        thread.innerHTML = "";
+      }
       thread.insertAdjacentHTML("beforeend", userBubble(query, files));
       const wait = document.createElement("div");
       wait.className = "msg";
