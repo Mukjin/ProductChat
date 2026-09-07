@@ -174,12 +174,48 @@
       display: flex; flex-direction: column;
     }
     .stage.empty {
-      justify-content: center;
-      padding-bottom: 8vh;
+      justify-content: flex-start;
+      padding: 4vh 0 24px;
     }
     .greet {
-      text-align: center; font-size: 32px; font-weight: 600;
+      text-align: center; font-size: clamp(22px, 3.2vw, 32px); font-weight: 600;
       letter-spacing: -0.04em; margin: 0 0 28px; line-height: 1.4;
+    }
+    .example-board {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto 8px;
+      display: grid;
+      gap: 18px;
+    }
+    .example-cat {
+      background: #262626;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+    }
+    .example-cat h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #cfcfcf;
+      letter-spacing: -0.02em;
+    }
+    .example-cat .chips {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+      justify-content: stretch;
+    }
+    .example-cat .chip {
+      border: 1px solid var(--line); background: #2c2c2c; color: #d7d7d7;
+      border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 13px;
+      cursor: pointer; text-align: left; line-height: 1.45;
+      width: 100%;
+    }
+    .example-cat .chip:hover { background: #343434; color: #fff; }
+    @media (max-width: 720px) {
+      .example-cat .chips { grid-template-columns: 1fr; }
     }
     .thread { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 16px; }
     .msg { display: flex; gap: 14px; margin: 0 0 28px; }
@@ -333,7 +369,7 @@
     .bubble .files img {
       max-width: 200px; max-height: 150px; border-radius: 10px; display: block; cursor: zoom-in;
     }
-    .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+    .chips { display: none; }
     .chip {
       border: 1px solid var(--line); background: transparent; color: #d7d7d7;
       border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer;
@@ -364,19 +400,19 @@
         <input id="chatSearch" type="search" placeholder="채팅 검색" autocomplete="off" />
       </div>
       <nav class="nav">
-        <button class="nav-item" type="button" data-q="구매요구는 어디서 하나요?">
+        <button class="nav-item" type="button" data-cat="구매/발주">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
           구매/발주
         </button>
-        <button class="nav-item" type="button" data-q="착수계 작성법 알려줘">
+        <button class="nav-item" type="button" data-cat="계약">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10v18H7zM7 8h10"/></svg>
           계약
         </button>
-        <button class="nav-item" type="button" data-q="경영정보에서 검수결과 등록하는 방법">
+        <button class="nav-item" type="button" data-cat="검수">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M4 20h16V4"/></svg>
           검수
         </button>
-        <button class="nav-item" type="button" data-q="잔금 줄 때 서류 뭐 필요해?">
+        <button class="nav-item" type="button" data-cat="대금지급">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
           대금지급
         </button>
@@ -419,7 +455,8 @@
 
       <div class="stage empty" id="stage">
         <div class="thread" id="thread">
-          <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요</h1>
+          <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+          <div class="example-board" id="exampleBoard"></div>
         </div>
       </div>
 
@@ -436,7 +473,6 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
           </button>
         </form>
-        <div class="chips" id="chips"></div>
       </div>
       <p class="legal">검증된 안내만 표시합니다. 개별 건의 적격·금액·예외는 담당 확인이 필요합니다.</p>
     </main>
@@ -449,7 +485,6 @@
     const form = document.getElementById("form");
     const input = document.getElementById("q");
     const go = document.getElementById("go");
-    const chips = document.getElementById("chips");
     const historyEl = document.getElementById("history");
     const selectBtn = document.getElementById("selectMode");
     const selBar = document.getElementById("selBar");
@@ -465,13 +500,56 @@
     let selected = new Set();
     let searchTerm = "";
     let attachments = [];
-    const greet = document.getElementById("greet");
 
-    const examples = [
-      "참조견적 요청은 어떻게 해요?",
-      "수의계약 금액 기준이 얼마야?",
-      "완료계 양식 어디 있어?",
-      "전자세금계산서 받는 메일 주소",
+    const exampleCategories = [
+      {
+        name: "1. 구매/발주",
+        id: "구매/발주",
+        questions: [
+          "참조견적은 어떻게 요청하나요?",
+          "구매상세요청서에는 어떤 내용을 기재해야 하나요?",
+          "수의계약으로 구매할 수 있는 금액 기준은 얼마인가요?",
+          "구매요구는 누가, 어떤 시스템에서 하나요?",
+          "자율구매가 가능한 금액 기준은 얼마인가요?",
+          "발주 요청서에 기재해야 할 필수 항목은 무엇인가요?",
+        ],
+      },
+      {
+        name: "2. 계약",
+        id: "계약",
+        questions: [
+          "착수계는 어떻게 작성하나요?",
+          "계약 체결 시 계약상대자가 제출해야 할 서류 목록은 무엇인가요?",
+          "계약이행보증보험증권의 보증금율과 보증기간은 어떻게 되나요?",
+          "수입인지(인지세)는 계약금액에 따라 얼마를 납부해야 하나요?",
+          "선금(착수금) 신청 서류와 절차는 어떻게 되나요?",
+          "용역수행계획서 작성 시 어떤 내용을 포함해야 하나요?",
+        ],
+      },
+      {
+        name: "3. 검수",
+        id: "검수",
+        questions: [
+          "검수조서는 어떻게 작성하고 누가 제출하나요?",
+          "경영정보시스템에서 검수결과를 등록하는 절차는 어떻게 되나요?",
+          "검수는 납품일로부터 며칠 이내에 완료해야 하나요?",
+          "물품 납품 검수와 용역 검수의 절차는 차이가 있나요?",
+          "검수 결재선(전결 기준)은 어떻게 되나요?",
+          "대금 지급은 검수일로부터 며칠 이내에 이루어지나요?",
+        ],
+      },
+      {
+        name: "4. 대금지급",
+        id: "대금지급",
+        questions: [
+          "잔금 지급 시 필요한 서류는 무엇인가요?",
+          "대금 지급(잔금)이 늦어질 경우 계약상대자에게 이자를 지급해야 하나요?",
+          "대금 지급 시 원천징수(세금)는 어떻게 처리되나요?",
+          "통장사본은 어떤 경우에 제출해야 하고 언제 제출하면 되나요?",
+          "선금 지급 후 잔금 정산은 어떻게 하나요?",
+          "대금지급 요청 오류 발생 시 수정 방법은 무엇인가요?",
+        ],
+      },
     ];
 
     let staticMode = false;
@@ -716,15 +794,37 @@
       return `<div class="msg user"><div class="bubble">${esc(text)}${attached}</div></div>`;
     }
 
+    function paintExamples() {
+      const board = document.getElementById("exampleBoard");
+      if (!board) return;
+      board.innerHTML = exampleCategories.map((cat) => `
+        <section class="example-cat" id="cat-${esc(cat.id)}" data-cat="${esc(cat.id)}">
+          <h2>${esc(cat.name)}</h2>
+          <div class="chips">
+            ${cat.questions.map((q) =>
+              `<button type="button" class="chip" data-q="${esc(q)}">${esc(q)}</button>`
+            ).join("")}
+          </div>
+        </section>`).join("");
+      board.querySelectorAll(".chip").forEach((b) => {
+        b.onclick = () => ask(b.dataset.q);
+      });
+    }
+
+    function showEmptyHome() {
+      thread.innerHTML = `
+        <h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요.</h1>
+        <div class="example-board" id="exampleBoard"></div>`;
+      stage.classList.add("empty");
+      paintExamples();
+    }
+
     function renderThread(messages) {
       if (!messages || !messages.length) {
-        thread.innerHTML = `<h1 class="greet" id="greet">구매 관련한 업무에 대해 궁금하시면<br>언제든지 질문해주세요</h1>`;
-        stage.classList.add("empty");
-        chips.style.display = "";
+        showEmptyHome();
         return;
       }
       stage.classList.remove("empty");
-      chips.style.display = "none";
       thread.innerHTML = "";
       for (const m of messages) {
         if (m.role === "user") {
@@ -746,20 +846,16 @@
       syncSend();
     }
 
-    examples.forEach((text) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip";
-      b.textContent = text;
-      b.onclick = () => ask(text);
-      chips.appendChild(b);
-    });
-
     document.querySelectorAll(".nav-item").forEach((b) => {
       b.onclick = () => {
-        input.value = b.dataset.q;
-        syncSend();
-        input.focus();
+        const cat = b.dataset.cat;
+        if (!currentChat() || !(currentChat().messages || []).length) {
+          showEmptyHome();
+        }
+        const target = document.getElementById(`cat-${cat}`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       };
     });
     document.getElementById("newChat").onclick = () => reset();
@@ -881,9 +977,10 @@
       chat.messages.push({ role: "user", text: query, files });
       persistChats();
       stage.classList.remove("empty");
-      chips.style.display = "none";
       const g = document.getElementById("greet");
       if (g) g.remove();
+      const board = document.getElementById("exampleBoard");
+      if (board) board.remove();
       thread.insertAdjacentHTML("beforeend", userBubble(query, files));
       const wait = document.createElement("div");
       wait.className = "msg";
@@ -1128,6 +1225,7 @@
     }
 
     paintHist();
+    paintExamples();
     syncSend();
   </script>
 </body>
