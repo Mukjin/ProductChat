@@ -10,17 +10,26 @@
   const FOLLOW_HINT =
     /(그\s*(양식|화면|절차|건|거|것|안내)|그거|이어서|그럼|그러면|위에|방금|앞에서)/;
   const SEARCH_K = 8;
-  const QUICK_REFUSE = 0.42;
-  const REFUSE_BELOW = 0.55;
-  const AMBIGUOUS_GAP = 0.05;
-  const CONFIDENT = 0.72;
-  const KW_SURE = 0.74;
+  const QUICK_REFUSE = 0.45;
+  const REFUSE_BELOW = 0.58;
+  const AMBIGUOUS_GAP = 0.08;
+  const CONFIDENT = 0.78;
+  const KW_SURE = 0.78;
   const KW_GAP = 0.12;
-  const KW_MIN = 0.5;
+  const KW_MIN = 0.55;
+  const KW_MIN_HITS = 4;
 
   let ROWS = [];
   let BY_QID = Object.create(null);
   let READY = null;
+
+  // 질문마다 흔히 겹치는 글자쌍은 매칭 점수에서 제외
+  const STOP_BI = new Set([
+    "하나", "나요", "니까", "어떻", "게하", "해야", "무엇", "인가",
+    "합니", "입니", "있는", "없는", "경우", "관련", "대한", "에서",
+    "으로", "또는", "그리", "언제", "누가", "어떤", "되나", "됩니",
+    "습니", "까요", "을까", "인가", "는지", "는데",
+  ]);
 
   function bigrams(text) {
     const clean = String(text || "")
@@ -28,13 +37,20 @@
       .replace(/[^0-9a-z가-힣]/g, "");
     if (clean.length < 2) return clean ? new Set([clean]) : new Set();
     const out = new Set();
-    for (let i = 0; i < clean.length - 1; i++) out.add(clean.slice(i, i + 2));
+    for (let i = 0; i < clean.length - 1; i++) {
+      const g = clean.slice(i, i + 2);
+      if (!STOP_BI.has(g)) out.add(g);
+    }
+    if (!out.size && clean.length >= 2) {
+      for (let i = 0; i < clean.length - 1; i++) out.add(clean.slice(i, i + 2));
+    }
     return out;
   }
 
   function ensureBi(row) {
     if (row._bi instanceof Set) return row._bi;
-    row._bi = Array.isArray(row.bi) ? new Set(row.bi) : bigrams(row.q);
+    row._bi = Array.isArray(row.bi) ? new Set(row.bi.filter((g) => !STOP_BI.has(g))) : bigrams(row.q);
+    if (!row._bi.size) row._bi = Array.isArray(row.bi) ? new Set(row.bi) : bigrams(row.q);
     return row._bi;
   }
 
@@ -59,17 +75,22 @@
       const bi = ensureBi(row);
       let hit = 0;
       for (const g of qb) if (bi.has(g)) hit++;
-      return [hit / qb.size, row];
+      return [hit / qb.size, hit, row];
     });
-    scored.sort((a, b) => b[0] - a[0]);
-    return scored.slice(0, k);
+    scored.sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+    return scored.slice(0, k).map(([cover, , row]) => [cover, row]);
   }
 
   function keywordFallback(query, k) {
     const out = [];
+    const qb = bigrams(query);
     for (const [cover, row] of keywordRank(query, k)) {
-      if (cover < KW_MIN) continue;
-      out.push([Math.min(0.95, 0.5 + cover / 2), row]);
+      const bi = ensureBi(row);
+      let hits = 0;
+      for (const g of qb) if (bi.has(g)) hits++;
+      if (cover < KW_MIN || hits < KW_MIN_HITS) continue;
+      // 점수를 부풀리지 않는다. 겹침 비율 그대로 써서 약한 일치는 거절한다.
+      out.push([cover, row]);
     }
     return out;
   }
